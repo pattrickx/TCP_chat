@@ -1,6 +1,6 @@
 import socket
 import threading
-
+import time
 
 class client:
     def __init__(self,host,port) -> None:
@@ -10,14 +10,17 @@ class client:
         self.conn_open = True
     def start(self):
         self.sock.connect((HOST, PORT))
-        thread_received_message = threading.Thread(target=self.handle_received_message)
-        thread_received_message.start()
-        thread_user = threading.Thread(target=self.handle_user)
-        thread_user.start()
+        if not self.login():
+            print("não foi possivel efetuar o login")
+        else:
+            thread_user = threading.Thread(target=self.handle_user)
+            thread_user.start()
+
+            thread_received_message = threading.Thread(target=self.handle_received_message)
+            thread_received_message.start()
 
     def handle_received_message(self):
         while self.conn_open:
-            print(self.conn_open)
             data = self.sock.recv(1024).decode('utf-8')
             if not data:
                 self.sock.close()
@@ -27,9 +30,9 @@ class client:
             if data["type"]=="msg":
                 print(" ")
                 print(data["msg"])
-            if data["type"]=="status":
-                print(" ")
-                print(data["msg"])
+            # if data["type"]=="status":
+            #     print(" ")
+            #     print(data["msg"])
 
     def login(self):
         user = input('Digite o seu nome de usuario: ')
@@ -42,7 +45,6 @@ class client:
             data = eval(data)
             if data["type"]== "status" and data['msg']=="OK":
                 return True
-        self.conn_open = False
         self.sock.close()
         return False
 
@@ -50,26 +52,31 @@ class client:
         msg = {"type":"logout"}
         self.sock.sendall(str(msg).encode('utf-8'))
         self.sock.close()
-
-    def handle_user(self):
-        if not self.login():
-            print("não foi possivel efetuar o login")
+    def handle_msg(self,mensagem):
+        if mensagem.startswith("SEND"):
+            destination = mensagem.split(" ")[1]
+            mensagem = mensagem.replace(f"SEND {destination} ","")
+            msg = {"type":"msg", "user":destination, "msg":mensagem}
+            # s.sendall(mensagem.encode('utf-8')) # manda o array de bytes da string
+            self.sock.sendall(str(msg).encode('utf-8'))
         else:
-            while self.conn_open:
-                try:
-                    destination = input('Digite o nome do usuario de destino ou all se for para todos: ')
-                    mensagem = input('Digite uma mensagem a ser enviada ao servidor: ')
-                    if destination == "" or mensagem == "":
-                        self.logout()
-                        break
-                    msg = {"type":"msg", "user":destination, "msg":mensagem}
-                    # s.sendall(mensagem.encode('utf-8')) # manda o array de bytes da string
-                    self.sock.sendall(str(msg).encode('utf-8')) # manda o array de bytes da string
-                except KeyboardInterrupt:
-                    print(" ")
-                    print('Encerrando cliente')
-                    self.sock.close()
+            msg = {"type":"msg", "user":"all", "msg":mensagem}
+            # s.sendall(mensagem.encode('utf-8')) # manda o array de bytes da string
+            self.sock.sendall(str(msg).encode('utf-8'))
+        
+    def handle_user(self):
+        while self.conn_open:
+            try:
+                mensagem = input()
+                if mensagem == "":
+                    self.logout()
                     break
+                self.handle_msg(mensagem)
+            except KeyboardInterrupt:
+                print(" ")
+                print('Encerrando cliente')
+                self.logout()
+                break
 
 
     # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
