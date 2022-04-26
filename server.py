@@ -61,13 +61,18 @@ class WebServer:
             data = eval(conn.recv(1024).decode('utf-8'))
 
             # Login
-            if data['type'] == "login":
+            if data['type'] == "login" and data['user'] and data["password"]:
                 if data['user'] in self.users["user"] and data["password"] == self.users["password"][self.users["user"].index(data['user'])]:
                     client["user"] = data['user']
                     self.clients.append(client)
+                    self.send_status(conn,"OK")
+                else:
+                    self.send_status(conn,"ERROR")
+                    conn.close()
+                    return 0
             else:
-                data_status = {"type":"status", "msg":f"login não efetuado"}
-                conn.sendall(str(data_status).encode('utf-8'))
+                self.send_status(conn,"ERROR")
+                conn.close()
                 return 0
 
             print(f'Conectado a {addr}')
@@ -77,10 +82,8 @@ class WebServer:
                 print(f"Mensagem recebida de {addr}: {data}")
                 if not data: break
                 if data['type']=="logout":
-                    self.clients.pop(self.clients.index(client))
-                    data_close = {"type":"logout", "msg":"closing connection"}
-                    conn.sendall(str(data_close).encode('utf-8'))
                     conn.close()
+                    self.clients.pop(self.clients.index(client))
                     break
                 if data['type']=="msg":
                     if data["user"]=="all":
