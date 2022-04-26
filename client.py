@@ -11,7 +11,7 @@ class client:
     def start(self):
         self.sock.connect((HOST, PORT))
         if not self.login():
-            print("Não foi possivel efetuar o login")
+            print("\nNão foi possivel efetuar o login")
         else:
             thread_user = threading.Thread(target=self.handle_user)
             thread_user.start()
@@ -98,5 +98,16 @@ HOST = 'localhost' # servidor que quero conectar
 PORT = 1234
 
 if __name__ == '__main__':
+
+    print("""
+    Aa iniciar o cliente coloque seu nome de usuario e senha para se conectar com o servidor 
+    ########
+    Para mandar uma mensagem para todos conectados basta escrever a mensagem e precionar ENTER
+    ########
+    Para mandar uma mensagem privada faça "SEND <nome do usuario> mensagem" e precione ENTER
+    EXEMPLO:
+    SEND test ola
+    ########
+    """)
     c = client(HOST,PORT)
     c.start()
