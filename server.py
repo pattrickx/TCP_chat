@@ -36,16 +36,21 @@ class WebServer:
                     data = {"type":"msg", "msg":f"{client['user']} disse: {msg}"}
                     to_client["conn"].sendall(str(data).encode('utf-8'))
             self.send_status(client["conn"],"Mensagem enviada com sucesso")
-        self.send_status(client["conn"],"Nenhum cliente Online")
+        else:
+            self.send_status(client["conn"],"Nenhum cliente Online")
 
     def send_to_user(self,client,to_user,msg):
-        if len(self.clients)>1:
-            for to_client in self.clients:
-                if to_client['user']==to_user:
-                    data = {"type":"msg", "msg":f"{client['user']} disse: {msg}"}
-                    to_client["conn"].sendall(str(data).encode('utf-8'))
-                    self.send_status(client["conn"],"Mensagem enviada com sucesso")
-        self.send_status(client["conn"],"Usuario offline")
+        if not to_user in self.users["user"]:
+            self.send_status(client["conn"],"Usuario não existe")
+        else:
+            if len(self.clients)>1:
+                for to_client in self.clients:
+                    if to_client['user']==to_user:
+                        data = {"type":"msg", "msg":f"{client['user']} disse: {msg}"}
+                        to_client["conn"].sendall(str(data).encode('utf-8'))
+                        self.send_status(client["conn"],"Mensagem enviada com sucesso")
+            else:
+                self.send_status(client["conn"],"Usuario offline")
     
     def client_handle(self, conn, addr):
 
@@ -57,8 +62,13 @@ class WebServer:
             if data['type'] == "login" and data['user'] and data["password"]:
                 if data['user'] in self.users["user"] and data["password"] == self.users["password"][self.users["user"].index(data['user'])]:
                     client["user"] = data['user']
-                    self.clients.append(client)
-                    self.send_status(conn,"OK")
+                    if not client in self.clients:
+                        self.clients.append(client)
+                        self.send_status(conn,"OK")
+                    else: 
+                        self.send_status(conn,"ERROR")
+                        conn.close()
+                        return 0
                 else:
                     self.send_status(conn,"ERROR")
                     conn.close()
