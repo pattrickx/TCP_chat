@@ -44,11 +44,14 @@ class WebServer:
             self.send_status(client["conn"],"Usuario não existe")
         else:
             if len(self.clients)>1:
+                data = None
                 for to_client in self.clients:
                     if to_client['user']==to_user:
                         data = {"type":"msg", "msg":f"DIRECT {client['user']} disse: {msg}"}
                         to_client["conn"].sendall(str(data).encode('utf-8'))
                         #self.send_status(client["conn"],"Mensagem enviada com sucesso")
+                if not data:
+                    self.send_status(client["conn"],"Usuario offline")
             else:
                 self.send_status(client["conn"],"Usuario offline")
     
@@ -106,7 +109,7 @@ class WebServer:
                     else:
                         self.send_to_user(client,data["user"],data["msg"])
 
-users = {"user":["patrick","test"],"password":["1234","4321"]}
+users = {"user":["patrick","test","test2"],"password":["1234","4321","senha"]}
 if __name__ == '__main__':
     server = WebServer(users)
     server.start()

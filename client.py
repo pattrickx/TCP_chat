@@ -32,9 +32,7 @@ class client:
                 print(data["msg"])
             if data["type"]=="status":
                 print(" ")
-                print("STATUS: {data['msg']}")
-            
-           
+                print(f"STATUS: {data['msg']}")
 
     def login(self):
         try:
