@@ -35,7 +35,7 @@ class WebServer:
                 if to_client["user"] != client["user"]:
                     data = {"type":"msg", "msg":f"{client['user']} disse: {msg}"}
                     to_client["conn"].sendall(str(data).encode('utf-8'))
-            self.send_status(client["conn"],"Mensagem enviada com sucesso")
+            #self.send_status(client["conn"],"Mensagem enviada com sucesso")
         else:
             self.send_status(client["conn"],"Nenhum cliente Online")
 
@@ -46,9 +46,9 @@ class WebServer:
             if len(self.clients)>1:
                 for to_client in self.clients:
                     if to_client['user']==to_user:
-                        data = {"type":"msg", "msg":f"{client['user']} disse: {msg}"}
+                        data = {"type":"msg", "msg":f"DIRECT {client['user']} disse: {msg}"}
                         to_client["conn"].sendall(str(data).encode('utf-8'))
-                        self.send_status(client["conn"],"Mensagem enviada com sucesso")
+                        #self.send_status(client["conn"],"Mensagem enviada com sucesso")
             else:
                 self.send_status(client["conn"],"Usuario offline")
     
@@ -56,7 +56,11 @@ class WebServer:
 
         client = {"conn": conn, "addr": addr, "user":""}
         with conn:
-            data = eval(conn.recv(1024).decode('utf-8'))
+            data = conn.recv(1024).decode('utf-8')
+            if not data:
+                conn.close()
+                return 0
+            data = eval(data)
 
             # Login
             if data['type'] == "login" and data['user'] and data["password"]:
@@ -64,6 +68,7 @@ class WebServer:
                     client["user"] = data['user']
                     if not client in self.clients:
                         self.clients.append(client)
+                        print(self.clients)
                         self.send_status(conn,"OK")
                     else: 
                         self.send_status(conn,"ERROR")
@@ -81,12 +86,19 @@ class WebServer:
             print(f'Conectado a {addr}')
             print(" ")
             while True:
-                data = eval(conn.recv(1024).decode('utf-8'))
+                data = conn.recv(1024).decode('utf-8')
+                if not data:
+                    conn.close()
+                    self.clients.remove(client)
+                    print(self.clients)
+                    break
+                data = eval(data)
                 print(f"Mensagem recebida de {addr}: {data}")
                 if not data: break
                 if data['type']=="logout":
                     conn.close()
-                    self.clients.pop(self.clients.index(client))
+                    self.clients.remove(client)
+                    print(self.clients)
                     break
                 if data['type']=="msg":
                     if data["user"]=="all":

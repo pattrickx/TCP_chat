@@ -11,7 +11,7 @@ class client:
     def start(self):
         self.sock.connect((HOST, PORT))
         if not self.login():
-            print("não foi possivel efetuar o login")
+            print("Não foi possivel efetuar o login")
         else:
             thread_user = threading.Thread(target=self.handle_user)
             thread_user.start()
@@ -30,26 +30,35 @@ class client:
             if data["type"]=="msg":
                 print(" ")
                 print(data["msg"])
-            # if data["type"]=="status":
-            #     print(" ")
-            #     print(data["msg"])
+            if data["type"]=="status":
+                print(" ")
+                print("STATUS: {data['msg']}")
+            
+           
 
     def login(self):
-        user = input('Digite o seu nome de usuario: ')
-        password = input('Digite sua Senha :')
-        
-        msg = {"type":"login", "user":user , "password":password}
-        self.sock.sendall(str(msg).encode('utf-8'))
-        data = self.sock.recv(1024).decode('utf-8')
-        if data:
-            data = eval(data)
-            if data["type"]== "status" and data['msg']=="OK":
-                return True
-        self.sock.close()
-        return False
+        try:
+            user = input('Digite o seu nome de usuario: ')
+            password = input('Digite sua Senha :')
+            
+            msg = {"type":"login", "user":user , "password":password}
+            self.sock.sendall(str(msg).encode('utf-8'))
+            data = self.sock.recv(1024).decode('utf-8')
+            if data:
+                data = eval(data)
+                if data["type"]== "status" and data['msg']=="OK":
+                    return True
+            self.sock.close()
+            return False
+        except KeyboardInterrupt:
+            self.sock.close()
+        except Exception as E:
+            print(E)
+            self.sock.close()
 
     def logout(self):
         msg = {"type":"logout"}
+        self.conn_open = False
         self.sock.sendall(str(msg).encode('utf-8'))
         self.sock.close()
     def handle_msg(self,mensagem):
@@ -72,10 +81,11 @@ class client:
                     self.logout()
                     break
                 self.handle_msg(mensagem)
-            except KeyboardInterrupt:
+            except KeyboardInterrupt or Exception:
                 print(" ")
                 print('Encerrando cliente')
-                self.logout()
+                self.sock.sendall(str({"type":"logout"}).encode('utf-8'))
+                self.sock.close()
                 break
 
 
