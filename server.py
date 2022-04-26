@@ -1,12 +1,5 @@
 import socket
 from threading import Thread
-import os
-import time
-
-from client import client
-
-
-
 class WebServer:
 
     def __init__(self, users, address='0.0.0.0', port=1234):
